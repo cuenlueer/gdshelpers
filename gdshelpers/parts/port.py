@@ -33,14 +33,25 @@ class Port:
 
     def __getitem__(self, item):
         if isinstance(item, slice):
-            start = item.start if item.start >= 0 else len(self.width[::2]) + item.start + 1
-            stop = item.stop if item.stop >= 0 else len(self.width[::2]) + item.stop + 1
+            start = (
+                item.start
+                if item.start >= 0
+                else len(self.width[::2]) + item.start + 1
+            )
+            stop = (
+                item.stop
+                if item.stop >= 0
+                else len(self.width[::2]) + item.stop + 1
+            )
             start, stop = 2 * start, 2 * stop
         else:
             item = item if item >= 0 else len(self.width[::2]) + item
             start, stop = 2 * item, 2 * item + 1
 
-        port = self.parallel_offset((np.sum(self.width[:stop]) + np.sum(self.width[:start])) / 2 - self.total_width / 2)
+        port = self.parallel_offset(
+            (np.sum(self.width[:stop]) + np.sum(self.width[:start])) / 2
+            - self.total_width / 2
+        )
         port.width = self.width[start:stop]
         return port
 
@@ -51,7 +62,9 @@ class Port:
         :return: A dictionary containing the ``origin``, ``angle`` and ``width`` of the port.
         :rtype: dict
         """
-        return {key: getattr(self, key) for key in ('origin', 'angle', 'width')}
+        return {
+            key: getattr(self, key) for key in ("origin", "angle", "width")
+        }
 
     def set_port_properties(self, **kwargs):
         """
@@ -63,7 +76,9 @@ class Port:
         :rtype: Port
         """
         for key, value in kwargs.items():
-            assert key in ('origin', 'angle', 'width'), '"%s" is not a valid property' % key
+            assert key in ("origin", "angle", "width"), (
+                '"%s" is not a valid property' % key
+            )
             setattr(self, key, value)
 
         return self
@@ -92,7 +107,9 @@ class Port:
     # noinspection PyAttributeOutsideInit
     @origin.setter
     def origin(self, origin):
-        assert len(origin) == 2, 'origin must be a 2D coordinate'
+        assert (
+            len(origin) == 2
+        ), f"origin must be a 2D coordinate but has length {len(origin)} {origin}"
         self._origin = np.array(origin, dtype=float)
 
     @property
@@ -144,8 +161,10 @@ class Port:
     # noinspection PyAttributeOutsideInit
     @width.setter
     def width(self, width):
-        assert np.sum(width) > 0, 'Port width must be larger than zero'
-        self._width = np.array(width) if np.array(width).size > 1 else float(width)
+        assert np.sum(width) > 0, "Port width must be larger than zero"
+        self._width = (
+            np.array(width) if np.array(width).size > 1 else float(width)
+        )
 
     def parallel_offset(self, offset):
         """
@@ -157,7 +176,10 @@ class Port:
         :rtype: Port
         """
         port = self.copy()
-        offset = [offset * np.cos(self.angle + np.pi / 2), offset * np.sin(self.angle + np.pi / 2)]
+        offset = [
+            offset * np.cos(self.angle + np.pi / 2),
+            offset * np.sin(self.angle + np.pi / 2),
+        ]
         port.origin = port.origin + offset
         return port
 
@@ -206,11 +228,16 @@ class Port:
     @property
     def debug_shape(self):
         from gdshelpers.parts.waveguide import Waveguide
+
         d = self.total_width / 5
-        wg = Waveguide.make_at_port(self.longitudinal_offset(-d), width=self.total_width * 10)
+        wg = Waveguide.make_at_port(
+            self.longitudinal_offset(-d), width=self.total_width * 10
+        )
         wg.add_straight_segment(d)
         wg.width = self.width
         wg.add_straight_segment(4 * self.total_width)
         wg.width = self.width * 5
-        wg.add_straight_segment(self.total_width * 5, final_width=self.total_width * 0.1)
+        wg.add_straight_segment(
+            self.total_width * 5, final_width=self.total_width * 0.1
+        )
         return wg.get_shapely_object()
